@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Flask
+instance/
+.webassets-cache
+
+# Environment files - NEVER COMMIT THESE!
+.env
+*.env
+!*.env.template
+telegram_config.env
+comfyui_config.env
+
+# Configuration files with secrets
+config.json
+
+# User data and job outputs
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# Output and temp files
+repomix-output.xml
+*.tmp
+*.temp
+
+# OS
+Thumbs.db
+.Trash-*
+
+# Workflow files (may contain personal paths)
+Workflows/
+
+# System service files (contain personal paths)
+*.service

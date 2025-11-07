@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .service-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .service-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-inactive {
+            background: #f44336;
+            color: white;
+        }
+
+        .service-url {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .service-url:hover {
+            text-decoration: underline;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-start {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-stop {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-restart {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-restart:hover {
+            background: #e68900;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-kill {
+            background: #9c27b0;
+            color: white;
+        }
+
+        .btn-kill:hover {
+            background: #7b1fa2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            border-left: 4px solid #4CAF50;
+        }
+
+        .notification.error {
+            border-left: 4px solid #f44336;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .services {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Server Dashboard</h1>
+        <p class="subtitle" id="server-info">Loading...</p>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="/config" style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: 8px; transition: all 0.3s;">
+                ⚙️ Configuration
+            </a>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>CPU Usage</h3>
+                <div class="stat-value" id="cpu-usage">--%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="cpu-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Memory</h3>
+                <div class="stat-value" id="memory-usage">-- / -- GB</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="memory-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Disk</h3>
+                <div class="stat-value" id="disk-usage">-- / -- GB</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="disk-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card" id="gpu-card" style="display: none;">
+                <h3>GPU (RTX 4070 Ti)</h3>
+                <div class="stat-value" id="gpu-usage">--%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="gpu-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="services">
+            <!-- Web UI Server (NEW) -->
+            <div class="service-card" style="grid-column: 1 / -1;">
+                <div class="service-header">
+                    <span class="service-title">🎥 Image→Video Server</span>
+                    <span class="status-badge status-active">Active</span>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <!-- ComfyUI Status -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+                        <div>
+                            <strong>ComfyUI:</strong>
+                            <span id="comfy-reachable" style="margin-left: 8px; color: #888;">checking...</span>
+                            <span id="comfy-latency" style="margin-left: 8px; color: #888;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Worker Status -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+                        <div>
+                            <strong>Worker:</strong>
+                            <span id="worker-status" style="margin-left: 8px; color: #888;">checking...</span>
+                            <span id="worker-queue" style="margin-left: 8px; color: #888;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Status -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+                        <div>
+                            <strong>Telegram:</strong>
+                            <span id="telegram-status-badge" style="margin-left: 8px; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; background: #ccc; color: white;">Checking...</span>
+                        </div>
+                        <div>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="telegram-toggle" onchange="toggleTelegram(this.checked)" style="margin-right: 8px; cursor: pointer;">
+                                <span>Enable</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ollama -->
+            <div class="service-card">
+                <div class="service-header">
+                    <span class="service-title">Ollama</span>
+                    <span class="status-badge" id="ollama-status">Checking...</span>
+                </div>
+                <a href="http://192.168.1.21:11434" target="_blank" class="service-url">http://192.168.1.21:11434</a>
+                <div class="button-group">
+                    <button class="btn-start" onclick="controlService('ollama', 'start')">Start</button>
+                    <button class="btn-stop" onclick="controlService('ollama', 'stop')">Stop</button>
+                    <button class="btn-restart" onclick="controlService('ollama', 'restart')">Restart</button>
+                    <button class="btn-kill" onclick="killOllamaModels()">Kill Models</button>
+                </div>
+            </div>
+
+            <!-- Open WebUI -->
+            <div class="service-card">
+                <div class="service-header">
+                    <span class="service-title">Open WebUI</span>
+                    <span class="status-badge" id="open_webui-status">Checking...</span>
+                </div>
+                <a href="http://192.168.1.21:3000" target="_blank" class="service-url">http://192.168.1.21:3000</a>
+                <div class="button-group">
+                    <button class="btn-start" onclick="controlDocker('open-webui', 'start')">Start</button>
+                    <button class="btn-stop" onclick="controlDocker('open-webui', 'stop')">Stop</button>
+                    <button class="btn-restart" onclick="controlDocker('open-webui', 'restart')">Restart</button>
+                </div>
+            </div>
+
+            <!-- ComfyUI -->
+            <div class="service-card">
+                <div class="service-header">
+                    <span class="service-title">ComfyUI</span>
+                    <span class="status-badge" id="comfyui-status">Checking...</span>
+                </div>
+                <a href="http://192.168.1.21:8188" target="_blank" class="service-url">http://192.168.1.21:8188</a>
+                <div class="button-group">
+                    <button class="btn-start" onclick="controlService('comfyui', 'start')">Start</button>
+                    <button class="btn-stop" onclick="controlService('comfyui', 'stop')">Stop</button>
+                    <button class="btn-restart" onclick="controlService('comfyui', 'restart')">Restart</button>
+                </div>
+            </div>
+
+            <!-- Sunshine -->
+            <div class="service-card">
+                <div class="service-header">
+                    <span class="service-title">Sunshine</span>
+                    <span class="status-badge" id="sunshine-status">Checking...</span>
+                </div>
+                <a href="http://192.168.1.21:47990" target="_blank" class="service-url">http://192.168.1.21:47990</a>
+                <div class="button-group">
+                    <button class="btn-start" onclick="controlService('sunshine', 'start')">Start</button>
+                    <button class="btn-stop" onclick="controlService('sunshine', 'stop')">Stop</button>
+                    <button class="btn-restart" onclick="controlService('sunshine', 'restart')">Restart</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                // Update server info
+                document.getElementById('server-info').textContent =
+                    `${data.hostname} @ ${data.ip}`;
+
+                // Update stats
+                document.getElementById('cpu-usage').textContent = `${data.stats.cpu.toFixed(1)}%`;
+                document.getElementById('cpu-bar').style.width = `${data.stats.cpu}%`;
+
+                document.getElementById('memory-usage').textContent =
+                    `${data.stats.memory.used} / ${data.stats.memory.total} GB`;
+                document.getElementById('memory-bar').style.width = `${data.stats.memory.percent}%`;
+
+                document.getElementById('disk-usage').textContent =
+                    `${data.stats.disk.used} / ${data.stats.disk.total} GB`;
+                document.getElementById('disk-bar').style.width = `${data.stats.disk.percent}%`;
+
+                // Update GPU if available
+                if (data.stats.gpu) {
+                    document.getElementById('gpu-card').style.display = 'block';
+                    document.getElementById('gpu-usage').textContent =
+                        `${data.stats.gpu.utilization}% (${data.stats.gpu.memory_used / 1024}GB / ${data.stats.gpu.memory_total / 1024}GB)`;
+                    document.getElementById('gpu-bar').style.width = `${data.stats.gpu.utilization}%`;
+                }
+
+                // Update service statuses
+                Object.keys(data.services).forEach(service => {
+                    const statusBadge = document.getElementById(`${service}-status`);
+                    const isActive = data.services[service] === 'active' || data.services[service] === 'running';
+
+                    statusBadge.textContent = isActive ? 'Active' : 'Inactive';
+                    statusBadge.className = isActive ? 'status-badge status-active' : 'status-badge status-inactive';
+                });
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+
+            // Update admin status
+            try {
+                const adminResponse = await fetch('/api/admin/status');
+                const adminData = await adminResponse.json();
+
+                // Update ComfyUI status
+                const comfyReachable = document.getElementById('comfy-reachable');
+                const comfyLatency = document.getElementById('comfy-latency');
+                if (adminData.comfyui.reachable) {
+                    comfyReachable.textContent = '✓ Reachable';
+                    comfyReachable.style.color = '#4CAF50';
+                    comfyLatency.textContent = `(${adminData.comfyui.latency_ms}ms)`;
+                } else {
+                    comfyReachable.textContent = '✗ Unreachable';
+                    comfyReachable.style.color = '#f44336';
+                    comfyLatency.textContent = '';
+                }
+
+                // Update worker status
+                const workerStatus = document.getElementById('worker-status');
+                const workerQueue = document.getElementById('worker-queue');
+                workerStatus.textContent = adminData.image_to_video_agent.worker === 'running' ? '✓ Running' : '✗ Stopped';
+                workerStatus.style.color = adminData.image_to_video_agent.worker === 'running' ? '#4CAF50' : '#f44336';
+                workerQueue.textContent = `Queue: ${adminData.image_to_video_agent.queued} | Success: ${adminData.image_to_video_agent.recent.success} | Failed: ${adminData.image_to_video_agent.recent.failed}`;
+
+                // Update Telegram status
+                const telegramBadge = document.getElementById('telegram-status-badge');
+                const telegramToggle = document.getElementById('telegram-toggle');
+                const enabled = adminData.telegram.enabled;
+                const botName = adminData.telegram.bot_name;
+
+                telegramToggle.checked = enabled;
+
+                if (enabled) {
+                    telegramBadge.textContent = botName ? `Enabled — ${botName}` : 'Enabled';
+                    telegramBadge.style.background = '#4CAF50';
+                } else {
+                    telegramBadge.textContent = 'Disabled';
+                    telegramBadge.style.background = '#f44336';
+                }
+
+            } catch (error) {
+                console.error('Failed to update admin status:', error);
+            }
+        }
+
+        async function toggleTelegram(enabled) {
+            try {
+                const response = await fetch('/api/admin/telegram/enable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`Telegram ${enabled ? 'enabled' : 'disabled'}!`, 'success');
+                    setTimeout(updateStatus, 500);
+                } else {
+                    showNotification('Failed to toggle Telegram', 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function controlService(service, action) {
+            try {
+                const response = await fetch(`/api/service/${service}/${action}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`${service} ${action} successful!`, 'success');
+                    setTimeout(updateStatus, 1000);
+                } else {
+                    showNotification(`Failed to ${action} ${service}: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function controlDocker(container, action) {
+            try {
+                const response = await fetch(`/api/docker/${container}/${action}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`${container} ${action} successful!`, 'success');
+                    setTimeout(updateStatus, 1000);
+                } else {
+                    showNotification(`Failed to ${action} ${container}: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function killOllamaModels() {
+            if (!confirm('This will restart Ollama and kill all running models. Continue?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/ollama/kill-models', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Ollama models killed and service restarted!', 'success');
+                    setTimeout(updateStatus, 1000);
+                } else {
+                    showNotification(`Failed to kill models: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Update status every 5 seconds
+        updateStatus();
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>

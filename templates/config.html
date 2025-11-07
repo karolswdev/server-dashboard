@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Configuration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-buttons a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+
+        .nav-buttons a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .config-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .config-card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .form-group .hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-configured {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-not-configured {
+            background: #f44336;
+            color: white;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            border-left: 4px solid #4CAF50;
+        }
+
+        .notification.error {
+            border-left: 4px solid #f44336;
+        }
+
+        .workflow-info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .workflow-info p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Server Configuration</h1>
+        <p class="subtitle">Configure Telegram bot and ComfyUI workflow</p>
+
+        <div class="nav-buttons">
+            <a href="/">← Back to Dashboard</a>
+        </div>
+
+        <!-- Telegram Configuration -->
+        <div class="config-card">
+            <h2>
+                📱 Telegram Bot Configuration
+                <span class="status-indicator" id="telegram-config-status">Checking...</span>
+            </h2>
+
+            <div class="form-group">
+                <label for="bot-token">Bot Token</label>
+                <input type="password" id="bot-token" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
+                <div class="hint">Get this from @BotFather on Telegram. <a href="#" onclick="showBotFatherHelp(); return false;">How do I get this?</a></div>
+            </div>
+
+            <div class="form-group">
+                <label for="bot-name">Bot Username</label>
+                <input type="text" id="bot-name" placeholder="@MyVideoBot">
+                <div class="hint">Your bot's username (must end with 'bot')</div>
+            </div>
+
+            <div class="form-group">
+                <label for="default-chat-id">Default Chat ID (Optional)</label>
+                <input type="text" id="default-chat-id" placeholder="123456789">
+                <div class="hint">Your Telegram user ID for receiving notifications</div>
+            </div>
+
+            <div class="form-group">
+                <label for="public-url">Public URL (Optional)</label>
+                <input type="text" id="public-url" placeholder="https://example.com">
+                <div class="hint">For webhook and large file downloads</div>
+            </div>
+
+            <button class="btn btn-primary" onclick="saveTelegramConfig()">Save Telegram Config</button>
+            <button class="btn btn-secondary" onclick="testTelegramConfig()">Test Connection</button>
+        </div>
+
+        <!-- Workflow Configuration -->
+        <div class="config-card">
+            <h2>
+                🎬 ComfyUI Workflow
+                <span class="status-indicator" id="workflow-config-status">Checking...</span>
+            </h2>
+
+            <div id="workflow-current-info" class="workflow-info" style="display: none;">
+                <p><strong>Current Workflow:</strong> <span id="workflow-filename">-</span></p>
+                <p><strong>Last Updated:</strong> <span id="workflow-updated">-</span></p>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label>Upload Workflow JSON</label>
+                <div class="file-upload" onclick="document.getElementById('workflow-file').click()">
+                    <input type="file" id="workflow-file" accept=".json" onchange="handleWorkflowUpload(event)">
+                    <p>📁 Click to select workflow JSON file</p>
+                    <p style="font-size: 0.85em; color: #666;">Export from ComfyUI using "Save (API Format)"</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="workflow-json">Or Paste Workflow JSON</label>
+                <textarea id="workflow-json" placeholder='{"1": {"class_type": "LoadImage", ...}}'></textarea>
+                <div class="hint">Paste the complete workflow JSON from ComfyUI</div>
+            </div>
+
+            <button class="btn btn-primary" onclick="saveWorkflow()">Save Workflow</button>
+            <button class="btn btn-secondary" onclick="validateWorkflow()">Validate</button>
+        </div>
+
+        <!-- ComfyUI Connection -->
+        <div class="config-card">
+            <h2>
+                🔌 ComfyUI Connection
+                <span class="status-indicator" id="comfyui-connection-status">Checking...</span>
+            </h2>
+
+            <div class="form-group">
+                <label for="comfyui-url">ComfyUI URL</label>
+                <input type="text" id="comfyui-url" value="http://127.0.0.1:8188">
+                <div class="hint">URL where ComfyUI is running</div>
+            </div>
+
+            <button class="btn btn-primary" onclick="saveComfyUIURL()">Save URL</button>
+            <button class="btn btn-secondary" onclick="testComfyUIConnection()">Test Connection</button>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function showBotFatherHelp() {
+            alert(`To create a Telegram bot:
+
+1. Open Telegram and search for @BotFather
+2. Send: /start
+3. Send: /newbot
+4. Follow the prompts to name your bot
+5. Copy the Bot Token that BotFather gives you
+6. Paste it in the "Bot Token" field above
+
+Your bot username must end with "bot" (e.g., MyVideoBot)`);
+        }
+
+        async function loadCurrentConfig() {
+            try {
+                const response = await fetch('/api/config/status');
+                const data = await response.json();
+
+                // Update Telegram status
+                const telegramStatus = document.getElementById('telegram-config-status');
+                if (data.telegram.configured) {
+                    telegramStatus.textContent = 'Configured';
+                    telegramStatus.className = 'status-indicator status-configured';
+
+                    if (data.telegram.bot_name) {
+                        document.getElementById('bot-name').value = data.telegram.bot_name;
+                    }
+                } else {
+                    telegramStatus.textContent = 'Not Configured';
+                    telegramStatus.className = 'status-indicator status-not-configured';
+                }
+
+                // Update workflow status
+                const workflowStatus = document.getElementById('workflow-config-status');
+                if (data.workflow.configured) {
+                    workflowStatus.textContent = 'Configured';
+                    workflowStatus.className = 'status-indicator status-configured';
+
+                    const info = document.getElementById('workflow-current-info');
+                    info.style.display = 'block';
+                    document.getElementById('workflow-filename').textContent = data.workflow.filename || 'image_to_video_base.json';
+                    document.getElementById('workflow-updated').textContent = data.workflow.last_updated || 'Unknown';
+                } else {
+                    workflowStatus.textContent = 'Not Configured';
+                    workflowStatus.className = 'status-indicator status-not-configured';
+                }
+
+                // Update ComfyUI connection status
+                const comfyUIStatus = document.getElementById('comfyui-connection-status');
+                if (data.comfyui.reachable) {
+                    comfyUIStatus.textContent = `Connected (${data.comfyui.latency_ms}ms)`;
+                    comfyUIStatus.className = 'status-indicator status-configured';
+                } else {
+                    comfyUIStatus.textContent = 'Not Connected';
+                    comfyUIStatus.className = 'status-indicator status-not-configured';
+                }
+
+                if (data.comfyui.url) {
+                    document.getElementById('comfyui-url').value = data.comfyui.url;
+                }
+
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+
+        async function saveTelegramConfig() {
+            const botToken = document.getElementById('bot-token').value.trim();
+            const botName = document.getElementById('bot-name').value.trim();
+            const defaultChatId = document.getElementById('default-chat-id').value.trim();
+            const publicUrl = document.getElementById('public-url').value.trim();
+
+            if (!botToken || !botName) {
+                showNotification('Bot Token and Bot Name are required', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/config/telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bot_token: botToken,
+                        bot_name: botName,
+                        default_chat_id: defaultChatId,
+                        public_url: publicUrl
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Telegram config saved successfully!', 'success');
+                    setTimeout(loadCurrentConfig, 500);
+                } else {
+                    showNotification(`Failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTelegramConfig() {
+            showNotification('Testing Telegram connection...', 'success');
+
+            try {
+                const response = await fetch('/api/config/telegram/test', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`✓ Connected! Bot: ${data.bot_info.username}`, 'success');
+                } else {
+                    showNotification(`Connection failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function handleWorkflowUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('workflow-json').value = e.target.result;
+                showNotification(`Loaded ${file.name}`, 'success');
+            };
+            reader.readAsText(file);
+        }
+
+        async function saveWorkflow() {
+            const workflowJSON = document.getElementById('workflow-json').value.trim();
+
+            if (!workflowJSON) {
+                showNotification('Please upload or paste a workflow JSON', 'error');
+                return;
+            }
+
+            // Validate JSON
+            try {
+                JSON.parse(workflowJSON);
+            } catch (e) {
+                showNotification('Invalid JSON format', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/config/workflow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        workflow: workflowJSON
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Workflow saved successfully!', 'success');
+                    setTimeout(loadCurrentConfig, 500);
+                } else {
+                    showNotification(`Failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function validateWorkflow() {
+            const workflowJSON = document.getElementById('workflow-json').value.trim();
+
+            if (!workflowJSON) {
+                showNotification('Please upload or paste a workflow JSON', 'error');
+                return;
+            }
+
+            try {
+                const workflow = JSON.parse(workflowJSON);
+                const nodes = Object.values(workflow);
+
+                const hasLoadImage = nodes.some(n => n.class_type === 'LoadImage');
+                const hasTextEncode = nodes.some(n => n.class_type && n.class_type.includes('TextEncode'));
+                const hasVideo = nodes.some(n => n.class_type && (
+                    n.class_type.includes('Video') ||
+                    n.class_type.includes('VHS')
+                ));
+
+                let warnings = [];
+                if (!hasLoadImage) warnings.push('No LoadImage node found');
+                if (!hasTextEncode) warnings.push('No text encode node found');
+                if (!hasVideo) warnings.push('No video output node found');
+
+                if (warnings.length === 0) {
+                    showNotification('✓ Workflow looks good!', 'success');
+                } else {
+                    showNotification(`⚠️ Warnings: ${warnings.join(', ')}`, 'error');
+                }
+            } catch (e) {
+                showNotification('Invalid JSON format', 'error');
+            }
+        }
+
+        async function saveComfyUIURL() {
+            const url = document.getElementById('comfyui-url').value.trim();
+
+            if (!url) {
+                showNotification('URL is required', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/config/comfyui', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('ComfyUI URL saved!', 'success');
+                    setTimeout(loadCurrentConfig, 500);
+                } else {
+                    showNotification(`Failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testComfyUIConnection() {
+            showNotification('Testing ComfyUI connection...', 'success');
+
+            try {
+                const response = await fetch('/api/config/comfyui/test', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification(`✓ Connected! Latency: ${data.latency_ms}ms`, 'success');
+                } else {
+                    showNotification(`Connection failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Load current config on page load
+        loadCurrentConfig();
+    </script>
+</body>
+</html>

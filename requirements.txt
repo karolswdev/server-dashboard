@@ -1,0 +1,11 @@
+# Server Dashboard Requirements
+# Install with: pip install -r requirements.txt
+
+# Web framework
+flask>=3.0.0
+
+# HTTP requests
+requests>=2.31.0
+
+# System monitoring
+psutil>=5.9.0
