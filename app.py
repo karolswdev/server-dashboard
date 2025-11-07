@@ -348,6 +348,29 @@ def docket_health():
             "status": None
         })
 
+@app.route('/api/docket/convert', methods=['POST'])
+def docket_convert():
+    """Proxy conversion requests to Docket API."""
+    try:
+        # Forward POST request to Docket container
+        target_url = f"{DOCKET_URL}/api/convert"
+
+        # Forward the request body and headers
+        resp = requests.post(
+            target_url,
+            json=request.get_json(),
+            headers={'Content-Type': 'application/json'},
+            timeout=30  # Conversion can take time
+        )
+
+        # Return the response with same content type and status
+        return resp.content, resp.status_code, dict(resp.headers)
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "error": "Docket service unavailable",
+            "details": str(e)
+        }), 503
+
 # ===== New Job Routes =====
 
 @app.route('/api/jobs/image-to-video', methods=['POST'])
