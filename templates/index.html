@@ -397,6 +397,20 @@
                     <button class="btn-restart" onclick="controlService('sunshine', 'restart')">Restart</button>
                 </div>
             </div>
+
+            <!-- Docket Converter -->
+            <div class="service-card">
+                <div class="service-header">
+                    <span class="service-title">📄 Docket Converter</span>
+                    <span class="status-badge" id="docket-status">Checking...</span>
+                </div>
+                <a href="/docx/" target="_blank" class="service-url">HTML → DOCX/PPTX Converter</a>
+                <div class="button-group">
+                    <button class="btn-start" onclick="controlDocker('docket-converter', 'start')">Start</button>
+                    <button class="btn-stop" onclick="controlDocker('docket-converter', 'stop')">Stop</button>
+                    <button class="btn-restart" onclick="controlDocker('docket-converter', 'restart')">Restart</button>
+                </div>
+            </div>
         </div>
     </div>
 

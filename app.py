@@ -10,6 +10,7 @@ import os
 import socket
 import json
 import uuid
+import requests
 from pathlib import Path
 from typing import Optional
 
@@ -56,6 +57,10 @@ COMFYUI_BASE_URL = get_env("COMFYUI_BASE_URL", "http://127.0.0.1:8188")
 STORAGE_ROOT = Path(get_env("STORAGE_ROOT", "./data"))
 PUBLIC_BASE_URL = get_env("PUBLIC_BASE_URL", "")
 WORKFLOW_PATH = Path(get_env("WORKFLOW_PATH", "./Workflows/image_to_video_base.json"))
+
+# Docket config
+DOCKET_PORT = get_env("DOCKET_PORT", "3050")
+DOCKET_URL = f"http://127.0.0.1:{DOCKET_PORT}"
 
 # Telegram config
 TELEGRAM_BOT_TOKEN = get_env("TELEGRAM_BOT_TOKEN", "")
@@ -256,7 +261,8 @@ def status():
         "ollama": get_service_status("ollama"),
         "comfyui": get_service_status("comfyui"),
         "sunshine": get_service_status("sunshine"),
-        "open_webui": get_docker_status("open-webui")
+        "open_webui": get_docker_status("open-webui"),
+        "docket_converter": get_docker_status("docket-converter")
     }
 
     stats = get_system_stats()
@@ -265,7 +271,8 @@ def status():
         "services": services,
         "stats": stats,
         "hostname": socket.gethostname(),
-        "ip": request.host.split(':')[0]
+        "ip": request.host.split(':')[0],
+        "docket_url": DOCKET_URL
     })
 
 @app.route('/api/service/<service>/<action>', methods=['POST'])
@@ -284,7 +291,7 @@ def control_service(service, action):
 @app.route('/api/docker/<container>/<action>', methods=['POST'])
 def control_docker(container, action):
     """Control a Docker container."""
-    if container != 'open-webui':
+    if container not in ['open-webui', 'docket-converter']:
         return jsonify({"success": False, "error": "Invalid container"}), 400
 
     if action not in ['start', 'stop', 'restart']:
@@ -300,6 +307,46 @@ def kill_ollama_models():
     cmd = "sudo systemctl restart ollama"
     result = run_command(cmd)
     return jsonify(result)
+
+# ===== Docket Proxy Routes =====
+
+@app.route('/docx/')
+@app.route('/docx/<path:path>')
+def docket_proxy(path=''):
+    """Proxy requests to Docket web UI."""
+    try:
+        # Forward request to Docket container
+        target_url = f"{DOCKET_URL}/{path}"
+
+        # Forward query parameters
+        if request.query_string:
+            target_url += f"?{request.query_string.decode()}"
+
+        # Make request
+        resp = requests.get(target_url, timeout=10)
+
+        # Return response
+        return resp.content, resp.status_code, resp.headers.items()
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            "error": "Docket service unavailable",
+            "details": str(e)
+        }), 503
+
+@app.route('/api/docket/health', methods=['GET'])
+def docket_health():
+    """Check Docket container health."""
+    try:
+        resp = requests.get(f"{DOCKET_URL}/api/health", timeout=5)
+        return jsonify({
+            "reachable": resp.status_code == 200,
+            "status": resp.status_code
+        })
+    except:
+        return jsonify({
+            "reachable": False,
+            "status": None
+        })
 
 # ===== New Job Routes =====
 

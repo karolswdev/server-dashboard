@@ -203,3 +203,94 @@ class TelegramAPI:
         response = self.session.get(url, params=params, timeout=timeout + 5)
         response.raise_for_status()
         return response.json().get('result', [])
+
+    def send_document(self, chat_id: str, file_path, caption: str = "", filename: str = None) -> bool:
+        """Send document file to Telegram chat.
+
+        Args:
+            chat_id: Telegram chat ID
+            file_path: Path to document file
+            caption: Optional caption
+            filename: Optional custom filename
+
+        Returns:
+            True if sent successfully, False otherwise
+        """
+        try:
+            file_path = Path(file_path)
+
+            if not file_path.exists():
+                print(f"[ERROR] File not found: {file_path}")
+                return False
+
+            # Determine filename
+            if not filename:
+                filename = file_path.name
+
+            # Send document
+            with open(file_path, 'rb') as f:
+                files = {'document': (filename, f)}
+                data = {'chat_id': chat_id}
+
+                if caption:
+                    data['caption'] = caption
+
+                response = self.session.post(
+                    f"{self.base_url}/sendDocument",
+                    data=data,
+                    files=files,
+                    timeout=60
+                )
+
+                if response.status_code != 200:
+                    print(f"[ERROR] Telegram sendDocument failed: {response.text}")
+                    return False
+
+                result = response.json()
+                return result.get('ok', False)
+
+        except Exception as e:
+            print(f"[ERROR] Failed to send document: {e}")
+            return False
+
+    def download_file_content(self, file_id: str) -> Optional[str]:
+        """Download file content from Telegram and return as string.
+
+        Args:
+            file_id: Telegram file ID
+
+        Returns:
+            File content as string, or None if failed
+        """
+        try:
+            # Get file path
+            response = self.session.get(
+                f"{self.base_url}/getFile",
+                params={'file_id': file_id},
+                timeout=10
+            )
+
+            if response.status_code != 200:
+                print(f"[ERROR] getFile failed: {response.text}")
+                return None
+
+            result = response.json()
+            if not result.get('ok'):
+                return None
+
+            file_path = result['result']['file_path']
+
+            # Download file
+            file_url = f"https://api.telegram.org/file/bot{self.bot_token}/{file_path}"
+            download_response = self.session.get(file_url, timeout=30)
+
+            if download_response.status_code != 200:
+                print(f"[ERROR] File download failed: {download_response.status_code}")
+                return None
+
+            # Return as text (decode UTF-8)
+            return download_response.content.decode('utf-8', errors='ignore')
+
+        except Exception as e:
+            print(f"[ERROR] Failed to download file: {e}")
+            return None

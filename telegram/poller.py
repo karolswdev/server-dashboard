@@ -3,14 +3,20 @@
 
 import threading
 import time
+import os
 from typing import Optional, Callable
 from pathlib import Path
 
 from .api import TelegramAPI
+from .docket_handler import handle_docx_command, get_help_text as get_docket_help
 from jobs.models import Job, JobStatus
 from jobs.store import JobStore
 from jobs.queue import JobQueue
 from ollama_helper import OllamaHelper
+
+# Docket URL for HTML→DOCX conversion
+DOCKET_PORT = os.environ.get("DOCKET_PORT", "3050")
+DOCKET_URL = f"http://127.0.0.1:{DOCKET_PORT}"
 
 
 class TelegramPoller:
@@ -126,6 +132,12 @@ class TelegramPoller:
             return
 
         print("[TelegramPoller] Telegram is ENABLED, processing commands...", flush=True)
+
+        # Handle /docx or /convert command (Docket integration)
+        if text.startswith('/docx') or text.startswith('/convert'):
+            print("[TelegramPoller] Matched /docx or /convert command", flush=True)
+            handle_docx_command(self.telegram_api, message, DOCKET_URL)
+            return
 
         # Handle /help command
         print(f"[TelegramPoller] Checking if text '{text}' starts with '/help'", flush=True)
@@ -437,7 +449,7 @@ class TelegramPoller:
         Returns:
             Help text string
         """
-        return """🎥🎵 **Media Generation Bot**
+        return """🎥🎵📄 **Media Generation & Conversion Bot**
 
 **Commands:**
 
@@ -468,16 +480,23 @@ class TelegramPoller:
   • AI generates description & lyrics for you
   • Example: `/songai upbeat song about a robot learning to dance`
 
+`/docx <html>` - Convert HTML to DOCX
+  • Send HTML inline or attach .html file
+  • Example: `/docx <h1>Title</h1><p>Content</p>`
+  • With theme: `/docx corporate <h1>Report</h1>`
+  • Available themes: modern, corporate, minimal, horizon, obsidian
+
 `/help` - Show this help message
 
 **How it works:**
 • **Video**: Send `/im2vid` with image, wait ~2-4 min
 • **Song**: Send `/song` with description and lyrics, wait ~2-3 min
+• **DOCX**: Send `/docx` with HTML, receive instantly
 
 **Tips:**
 • Describe motion: "person walks", "camera pans left"
 • Add atmosphere: "cinematic lighting", "dramatic"
 • Be specific: "person turns head and smiles"
 
-**Powered by Wan2.2 Image→Video**
+**Powered by ComfyUI & Docket**
 """
