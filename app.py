@@ -3,7 +3,7 @@
 Extended Flask Admin Server with ComfyUI + Telegram Integration
 """
 
-from flask import Flask, render_template, jsonify, request, send_file
+from flask import Flask, render_template, jsonify, request, send_file, make_response
 import subprocess
 import psutil
 import os
@@ -59,8 +59,10 @@ PUBLIC_BASE_URL = get_env("PUBLIC_BASE_URL", "")
 WORKFLOW_PATH = Path(get_env("WORKFLOW_PATH", "./Workflows/image_to_video_base.json"))
 
 # Docket config
-DOCKET_PORT = get_env("DOCKET_PORT", "3050")
-DOCKET_URL = f"http://127.0.0.1:{DOCKET_PORT}"
+DOCKET_API_PORT = get_env("DOCKET_API_PORT", "3050")
+DOCKET_WEB_PORT = get_env("DOCKET_WEB_PORT", "3000")
+DOCKET_API_URL = f"http://127.0.0.1:{DOCKET_API_PORT}"
+DOCKET_WEB_URL = f"http://127.0.0.1:{DOCKET_WEB_PORT}"
 
 # Telegram config
 TELEGRAM_BOT_TOKEN = get_env("TELEGRAM_BOT_TOKEN", "")
@@ -272,7 +274,8 @@ def status():
         "stats": stats,
         "hostname": socket.gethostname(),
         "ip": request.host.split(':')[0],
-        "docket_url": DOCKET_URL
+        "docket_api_url": DOCKET_API_URL,
+        "docket_web_url": DOCKET_WEB_URL
     })
 
 @app.route('/api/service/<service>/<action>', methods=['POST'])
@@ -315,8 +318,8 @@ def kill_ollama_models():
 def docket_proxy(path=''):
     """Proxy requests to Docket web UI."""
     try:
-        # Forward request to Docket container
-        target_url = f"{DOCKET_URL}/{path}"
+        # Forward request to Docket web UI
+        target_url = f"{DOCKET_WEB_URL}/{path}"
 
         # Forward query parameters
         if request.query_string:
@@ -335,9 +338,9 @@ def docket_proxy(path=''):
 
 @app.route('/api/docket/health', methods=['GET'])
 def docket_health():
-    """Check Docket container health."""
+    """Check Docket API health."""
     try:
-        resp = requests.get(f"{DOCKET_URL}/api/health", timeout=5)
+        resp = requests.get(f"{DOCKET_API_URL}/api/health", timeout=5)
         return jsonify({
             "reachable": resp.status_code == 200,
             "status": resp.status_code
@@ -352,19 +355,31 @@ def docket_health():
 def docket_convert():
     """Proxy conversion requests to Docket API."""
     try:
-        # Forward POST request to Docket container
-        target_url = f"{DOCKET_URL}/api/convert"
+        # Forward POST request to Docket API
+        target_url = f"{DOCKET_API_URL}/api/convert"
+
+        # Get the request body
+        body = request.get_json()
+        if not body:
+            return jsonify({
+                "error": "Bad Request",
+                "message": "Request body is required"
+            }), 400
 
         # Forward the request body and headers
         resp = requests.post(
             target_url,
-            json=request.get_json(),
+            json=body,
             headers={'Content-Type': 'application/json'},
             timeout=30  # Conversion can take time
         )
 
-        # Return the response with same content type and status
-        return resp.content, resp.status_code, dict(resp.headers)
+        # Return the response with appropriate headers
+        response = make_response(resp.content, resp.status_code)
+        response.headers['Content-Type'] = resp.headers.get('Content-Type', 'application/octet-stream')
+        if 'Content-Disposition' in resp.headers:
+            response.headers['Content-Disposition'] = resp.headers['Content-Disposition']
+        return response
     except requests.exceptions.RequestException as e:
         return jsonify({
             "error": "Docket service unavailable",
